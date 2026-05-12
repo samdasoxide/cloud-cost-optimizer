@@ -1,9 +1,10 @@
 import asyncio
+from collections.abc import AsyncGenerator, Generator
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from app.database import get_session
 from app.main import app
@@ -13,7 +14,7 @@ SAMPLE_DATA = Path(__file__).parent.parent / "sample_data"
 
 
 @pytest.fixture()
-def client(tmp_path):
+def client(tmp_path: Path) -> Generator[TestClient, None, None]:
     db_url = f"sqlite+aiosqlite:///{tmp_path / 'test.db'}"
     test_engine = create_async_engine(db_url, echo=False)
     TestSession = async_sessionmaker(test_engine, expire_on_commit=False)
@@ -24,7 +25,7 @@ def client(tmp_path):
 
     asyncio.run(_create_tables())
 
-    async def override_get_session():
+    async def override_get_session() -> AsyncGenerator[AsyncSession, None]:
         async with TestSession() as session:
             yield session
 

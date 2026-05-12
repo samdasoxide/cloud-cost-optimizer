@@ -14,12 +14,12 @@ SAMPLE_DATA = Path(__file__).parent.parent / "sample_data"
 # AWS parser
 # ---------------------------------------------------------------------------
 
-def test_aws_parse_produces_one_resource_per_unique_resource_id():
+def test_aws_parse_produces_one_resource_per_unique_resource_id() -> None:
     resources = aws_parser.parse(SAMPLE_DATA / "aws_cur_sample.csv")
     assert len(resources) == 50
 
 
-def test_aws_parse_maps_ec2_instance_fields_correctly():
+def test_aws_parse_maps_ec2_instance_fields_correctly() -> None:
     resources = aws_parser.parse(SAMPLE_DATA / "aws_cur_sample.csv")
     web01 = next(r for r in resources if r.resource_id == "i-0a1b2c3d4e5f60001")
 
@@ -33,7 +33,7 @@ def test_aws_parse_maps_ec2_instance_fields_correctly():
     assert len(web01.raw_export) >= 1
 
 
-def test_aws_parse_maps_unattached_ebs_correctly():
+def test_aws_parse_maps_unattached_ebs_correctly() -> None:
     resources = aws_parser.parse(SAMPLE_DATA / "aws_cur_sample.csv")
     vol = next(r for r in resources if r.resource_id == "vol-0b1b2c3d4e5f60001")
 
@@ -43,7 +43,7 @@ def test_aws_parse_maps_unattached_ebs_correctly():
     assert raw_op == "CreateVolume-Unattached"
 
 
-def test_aws_parse_aggregates_cost_across_line_items(tmp_path: Path):
+def test_aws_parse_aggregates_cost_across_line_items(tmp_path: Path) -> None:
     header = (
         "identity/LineItemId,identity/TimeInterval,lineItem/UsageAccountId,"
         "lineItem/LineItemType,lineItem/UsageStartDate,lineItem/UsageEndDate,"
@@ -81,7 +81,7 @@ def test_aws_parse_aggregates_cost_across_line_items(tmp_path: Path):
 
 def test_aws_parse_skips_row_with_missing_resource_id(
     tmp_path: Path, caplog: pytest.LogCaptureFixture
-):
+) -> None:
     # Minimal fixture — only the columns the parser requires, ResourceId empty.
     csv_content = (
         "lineItem/ResourceId,lineItem/UnblendedCost,product/region,"
@@ -102,12 +102,12 @@ def test_aws_parse_skips_row_with_missing_resource_id(
 # Azure parser
 # ---------------------------------------------------------------------------
 
-def test_azure_parse_produces_one_resource_per_resource_id():
+def test_azure_parse_produces_one_resource_per_resource_id() -> None:
     resources = azure_parser.parse(SAMPLE_DATA / "azure_billing_sample.json")
     assert len(resources) == 24
 
 
-def test_azure_parse_maps_vm_fields_correctly():
+def test_azure_parse_maps_vm_fields_correctly() -> None:
     resources = azure_parser.parse(SAMPLE_DATA / "azure_billing_sample.json")
     arm_id = (
         "/subscriptions/a3b45678-1234-5678-9abc-def012345678"
@@ -124,7 +124,7 @@ def test_azure_parse_maps_vm_fields_correctly():
     assert isinstance(vm.raw_export, list)
 
 
-def test_azure_parse_maps_unattached_disk_correctly():
+def test_azure_parse_maps_unattached_disk_correctly() -> None:
     resources = azure_parser.parse(SAMPLE_DATA / "azure_billing_sample.json")
     disk = next(r for r in resources if "orphan-disk-01" in r.resource_id)
 
@@ -136,7 +136,7 @@ def test_azure_parse_maps_unattached_disk_correctly():
 
 def test_azure_parse_skips_record_with_missing_resource_id(
     tmp_path: Path, caplog: pytest.LogCaptureFixture
-):
+) -> None:
     records = [
         {
             "ResourceId": None,

@@ -1,5 +1,6 @@
 import datetime
 import json
+from typing import Any
 
 from app.models.db import Resource
 from app.rules.engine import evaluate_all
@@ -9,8 +10,8 @@ from app.rules.unattached_volume import UnattachedVolumeRule
 from app.rules.unused_public_ip import UnusedPublicIPRule
 
 
-def _resource(**kwargs) -> Resource:
-    defaults: dict = dict(
+def _resource(**kwargs: Any) -> Resource:
+    defaults: dict[str, Any] = dict(
         provider="aws",
         resource_type="unknown",
         region="us-east-1",
@@ -29,7 +30,7 @@ def _resource(**kwargs) -> Resource:
 # ---------------------------------------------------------------------------
 
 
-def test_unattached_volume_triggers_for_ebs_with_unattached_operation():
+def test_unattached_volume_triggers_for_ebs_with_unattached_operation() -> None:
     resource = _resource(
         resource_type="ebs_volume",
         monthly_cost_usd=10.0,
@@ -43,7 +44,7 @@ def test_unattached_volume_triggers_for_ebs_with_unattached_operation():
     assert finding.evidence["operation"] == "CreateVolume-Unattached"
 
 
-def test_unattached_volume_does_not_trigger_for_attached_ebs():
+def test_unattached_volume_does_not_trigger_for_attached_ebs() -> None:
     resource = _resource(
         resource_type="ebs_volume",
         raw_export=[{"lineItem/Operation": "CreateVolume"}],
@@ -56,7 +57,7 @@ def test_unattached_volume_does_not_trigger_for_attached_ebs():
 # ---------------------------------------------------------------------------
 
 
-def test_unattached_volume_triggers_for_unattached_managed_disk():
+def test_unattached_volume_triggers_for_unattached_managed_disk() -> None:
     ai = json.dumps({"diskSizeGB": 512, "diskState": "Unattached", "attachedTo": None})
     resource = _resource(
         provider="azure",
@@ -72,7 +73,7 @@ def test_unattached_volume_triggers_for_unattached_managed_disk():
     assert finding.estimated_monthly_saving_usd == 35.0
 
 
-def test_unattached_volume_does_not_trigger_for_attached_managed_disk():
+def test_unattached_volume_does_not_trigger_for_attached_managed_disk() -> None:
     ai = json.dumps({"diskSizeGB": 128, "diskState": "Attached", "attachedTo": "vm-prod-web-01"})
     resource = _resource(
         provider="azure",
@@ -87,7 +88,7 @@ def test_unattached_volume_does_not_trigger_for_attached_managed_disk():
 # ---------------------------------------------------------------------------
 
 
-def test_idle_compute_triggers_for_ec2_below_cpu_threshold():
+def test_idle_compute_triggers_for_ec2_below_cpu_threshold() -> None:
     resource = _resource(
         resource_type="ec2_instance",
         monthly_cost_usd=69.12,
@@ -102,7 +103,7 @@ def test_idle_compute_triggers_for_ec2_below_cpu_threshold():
     assert finding.estimated_monthly_saving_usd == 69.12
 
 
-def test_idle_compute_does_not_trigger_for_active_ec2():
+def test_idle_compute_does_not_trigger_for_active_ec2() -> None:
     resource = _resource(
         resource_type="ec2_instance",
         raw_export=[{"avg_cpu_percent": 45.0, "metrics_period_days": 21}],
@@ -115,7 +116,7 @@ def test_idle_compute_does_not_trigger_for_active_ec2():
 # ---------------------------------------------------------------------------
 
 
-def test_idle_compute_triggers_for_azure_vm_below_cpu_threshold():
+def test_idle_compute_triggers_for_azure_vm_below_cpu_threshold() -> None:
     resource = _resource(
         provider="azure",
         resource_type="virtual_machine",
@@ -128,7 +129,7 @@ def test_idle_compute_triggers_for_azure_vm_below_cpu_threshold():
     assert finding.evidence["avg_cpu_percent"] == 1.5
 
 
-def test_idle_compute_does_not_trigger_when_metrics_period_too_short():
+def test_idle_compute_does_not_trigger_when_metrics_period_too_short() -> None:
     resource = _resource(
         resource_type="ec2_instance",
         raw_export=[{"avg_cpu_percent": 2.0, "metrics_period_days": 10}],
@@ -141,7 +142,7 @@ def test_idle_compute_does_not_trigger_when_metrics_period_too_short():
 # ---------------------------------------------------------------------------
 
 
-def test_unused_public_ip_triggers_for_idle_elastic_ip():
+def test_unused_public_ip_triggers_for_idle_elastic_ip() -> None:
     resource = _resource(
         resource_type="elastic_ip",
         monthly_cost_usd=3.65,
@@ -155,7 +156,7 @@ def test_unused_public_ip_triggers_for_idle_elastic_ip():
     assert finding.estimated_monthly_saving_usd == 3.65
 
 
-def test_unused_public_ip_does_not_trigger_for_active_elastic_ip():
+def test_unused_public_ip_does_not_trigger_for_active_elastic_ip() -> None:
     resource = _resource(
         resource_type="elastic_ip",
         raw_export=[{"lineItem/UsageType": "USE1-ElasticIP:ElasticIP"}],
@@ -168,7 +169,7 @@ def test_unused_public_ip_does_not_trigger_for_active_elastic_ip():
 # ---------------------------------------------------------------------------
 
 
-def test_unused_public_ip_triggers_for_unassociated_azure_pip():
+def test_unused_public_ip_triggers_for_unassociated_azure_pip() -> None:
     ai = json.dumps(
         {"ipAddress": "20.50.60.71", "allocationMethod": "Static", "associatedResource": None}
     )
@@ -184,7 +185,7 @@ def test_unused_public_ip_triggers_for_unassociated_azure_pip():
     assert finding.evidence["associated_resource"] is None
 
 
-def test_unused_public_ip_does_not_trigger_for_associated_azure_pip():
+def test_unused_public_ip_does_not_trigger_for_associated_azure_pip() -> None:
     ai = json.dumps(
         {"ipAddress": "20.10.20.30", "allocationMethod": "Static", "associatedResource": "vm-prod-web-01"}
     )
@@ -201,7 +202,7 @@ def test_unused_public_ip_does_not_trigger_for_associated_azure_pip():
 # ---------------------------------------------------------------------------
 
 
-def test_old_snapshot_triggers_for_snapshot_older_than_90_days():
+def test_old_snapshot_triggers_for_snapshot_older_than_90_days() -> None:
     old_date = (datetime.date.today() - datetime.timedelta(days=120)).isoformat()
     resource = _resource(
         resource_type="ebs_snapshot",
@@ -217,7 +218,7 @@ def test_old_snapshot_triggers_for_snapshot_older_than_90_days():
     assert finding.estimated_monthly_saving_usd == 8.0
 
 
-def test_old_snapshot_does_not_trigger_for_recent_snapshot():
+def test_old_snapshot_does_not_trigger_for_recent_snapshot() -> None:
     recent_date = (datetime.date.today() - datetime.timedelta(days=30)).isoformat()
     resource = _resource(
         resource_type="ebs_snapshot",
@@ -226,12 +227,12 @@ def test_old_snapshot_does_not_trigger_for_recent_snapshot():
     assert OldSnapshotRule().evaluate(resource) is None
 
 
-def test_old_snapshot_does_not_trigger_when_no_creation_date():
+def test_old_snapshot_does_not_trigger_when_no_creation_date() -> None:
     resource = _resource(resource_type="ebs_snapshot", tags={}, raw_export=[])
     assert OldSnapshotRule().evaluate(resource) is None
 
 
-def test_old_snapshot_reads_creation_date_from_raw_export():
+def test_old_snapshot_reads_creation_date_from_raw_export() -> None:
     old_date = (datetime.date.today() - datetime.timedelta(days=95)).isoformat()
     resource = _resource(
         resource_type="ebs_snapshot",
@@ -248,7 +249,7 @@ def test_old_snapshot_reads_creation_date_from_raw_export():
 # ---------------------------------------------------------------------------
 
 
-def test_evaluate_all_runs_all_rules_against_all_resources():
+def test_evaluate_all_runs_all_rules_against_all_resources() -> None:
     old_date = (datetime.date.today() - datetime.timedelta(days=200)).isoformat()
     resources = [
         _resource(
@@ -272,7 +273,7 @@ def test_evaluate_all_runs_all_rules_against_all_resources():
     assert "OldSnapshotRule" in rule_names
 
 
-def test_evaluate_all_skips_non_matching_resources():
+def test_evaluate_all_skips_non_matching_resources() -> None:
     resource = _resource(resource_type="s3_bucket", resource_id="my-bucket")
     rules = [UnattachedVolumeRule(), IdleComputeRule(), UnusedPublicIPRule(), OldSnapshotRule()]
     findings = evaluate_all([resource], rules)

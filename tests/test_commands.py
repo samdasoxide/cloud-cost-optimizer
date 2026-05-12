@@ -1,11 +1,12 @@
 import datetime
+from typing import Any
 
 from app.commands.generator import generate_command
 from app.models.db import Finding, Resource
 
 
-def _resource(**kwargs) -> Resource:
-    defaults: dict = dict(
+def _resource(**kwargs: Any) -> Resource:
+    defaults: dict[str, Any] = dict(
         provider="aws",
         resource_type="unknown",
         region="us-east-1",
@@ -19,8 +20,8 @@ def _resource(**kwargs) -> Resource:
     return Resource(**defaults)
 
 
-def _finding(resource: Resource, **kwargs) -> Finding:
-    defaults: dict = dict(
+def _finding(resource: Resource, **kwargs: Any) -> Finding:
+    defaults: dict[str, Any] = dict(
         resource=resource,
         rule_name="TestRule",
         severity="medium",
@@ -42,7 +43,7 @@ def _azure_arm(rg: str, provider: str, resource_type: str, name: str, extra: str
 # ---------------------------------------------------------------------------
 
 
-def test_command_includes_rule_name_and_saving_in_comment():
+def test_command_includes_rule_name_and_saving_in_comment() -> None:
     resource = _resource(resource_type="ebs_volume", resource_id="vol-abc123", monthly_cost_usd=30.0)
     finding = _finding(resource, rule_name="UnattachedVolumeRule", estimated_monthly_saving_usd=30.0)
     cmd = generate_command(finding, resource)
@@ -50,7 +51,7 @@ def test_command_includes_rule_name_and_saving_in_comment():
     assert "$30.00" in cmd
 
 
-def test_comment_includes_resource_id_and_region():
+def test_comment_includes_resource_id_and_region() -> None:
     resource = _resource(resource_type="ebs_volume", resource_id="vol-abc123", region="eu-west-1")
     finding = _finding(resource)
     cmd = generate_command(finding, resource)
@@ -63,7 +64,7 @@ def test_comment_includes_resource_id_and_region():
 # ---------------------------------------------------------------------------
 
 
-def test_aws_ebs_volume_command_format():
+def test_aws_ebs_volume_command_format() -> None:
     resource = _resource(
         resource_type="ebs_volume",
         resource_id="vol-0b1b2c3d4e5f60001",
@@ -76,7 +77,7 @@ def test_aws_ebs_volume_command_format():
     assert "--region us-east-1" in cmd
 
 
-def test_aws_ebs_volume_command_includes_dry_run_note():
+def test_aws_ebs_volume_command_includes_dry_run_note() -> None:
     resource = _resource(resource_type="ebs_volume", resource_id="vol-abc", region="us-east-1")
     finding = _finding(resource)
     cmd = generate_command(finding, resource)
@@ -88,7 +89,7 @@ def test_aws_ebs_volume_command_includes_dry_run_note():
 # ---------------------------------------------------------------------------
 
 
-def test_aws_ec2_instance_command_format():
+def test_aws_ec2_instance_command_format() -> None:
     resource = _resource(
         resource_type="ec2_instance",
         resource_id="i-0a1b2c3d4e5f60001",
@@ -101,7 +102,7 @@ def test_aws_ec2_instance_command_format():
     assert "--region us-west-2" in cmd
 
 
-def test_aws_ec2_instance_command_includes_dry_run_note():
+def test_aws_ec2_instance_command_includes_dry_run_note() -> None:
     resource = _resource(resource_type="ec2_instance", resource_id="i-abc", region="us-east-1")
     finding = _finding(resource)
     cmd = generate_command(finding, resource)
@@ -113,7 +114,7 @@ def test_aws_ec2_instance_command_includes_dry_run_note():
 # ---------------------------------------------------------------------------
 
 
-def test_aws_elastic_ip_command_format():
+def test_aws_elastic_ip_command_format() -> None:
     resource = _resource(
         resource_type="elastic_ip",
         resource_id="eipalloc-0a1b2c3d4e5f60001",
@@ -126,7 +127,7 @@ def test_aws_elastic_ip_command_format():
     assert "--region us-east-1" in cmd
 
 
-def test_aws_elastic_ip_command_includes_dry_run_note():
+def test_aws_elastic_ip_command_includes_dry_run_note() -> None:
     resource = _resource(resource_type="elastic_ip", resource_id="eipalloc-abc", region="us-east-1")
     finding = _finding(resource)
     cmd = generate_command(finding, resource)
@@ -138,7 +139,7 @@ def test_aws_elastic_ip_command_includes_dry_run_note():
 # ---------------------------------------------------------------------------
 
 
-def test_aws_ebs_snapshot_command_format():
+def test_aws_ebs_snapshot_command_format() -> None:
     resource = _resource(
         resource_type="ebs_snapshot",
         resource_id="snap-0a1b2c3d4e5f60001",
@@ -151,7 +152,7 @@ def test_aws_ebs_snapshot_command_format():
     assert "--region eu-west-1" in cmd
 
 
-def test_aws_ebs_snapshot_command_includes_dry_run_note():
+def test_aws_ebs_snapshot_command_includes_dry_run_note() -> None:
     resource = _resource(resource_type="ebs_snapshot", resource_id="snap-abc", region="us-east-1")
     finding = _finding(resource)
     cmd = generate_command(finding, resource)
@@ -163,7 +164,7 @@ def test_aws_ebs_snapshot_command_includes_dry_run_note():
 # ---------------------------------------------------------------------------
 
 
-def test_aws_rds_command_format():
+def test_aws_rds_command_format() -> None:
     resource = _resource(
         resource_type="rds_instance",
         resource_id="mydb-prod",
@@ -178,7 +179,7 @@ def test_aws_rds_command_format():
     assert "--region us-east-1" in cmd
 
 
-def test_aws_rds_command_includes_snapshot_warning():
+def test_aws_rds_command_includes_snapshot_warning() -> None:
     resource = _resource(resource_type="rds_instance", resource_id="mydb", region="us-east-1")
     finding = _finding(resource)
     cmd = generate_command(finding, resource)
@@ -186,7 +187,7 @@ def test_aws_rds_command_includes_snapshot_warning():
     assert "WARNING" in cmd
 
 
-def test_aws_rds_strips_arn_prefix_from_resource_id():
+def test_aws_rds_strips_arn_prefix_from_resource_id() -> None:
     arn = "arn:aws:rds:us-east-1:123456789012:db:mydb-prod"
     resource = _resource(resource_type="rds_instance", resource_id=arn, region="us-east-1")
     finding = _finding(resource)
@@ -195,7 +196,7 @@ def test_aws_rds_strips_arn_prefix_from_resource_id():
     assert "arn:aws:rds" not in cmd.split("\n")[-1]
 
 
-def test_aws_rds_command_has_no_dry_run_note():
+def test_aws_rds_command_has_no_dry_run_note() -> None:
     resource = _resource(resource_type="rds_instance", resource_id="mydb", region="us-east-1")
     finding = _finding(resource)
     # RDS delete-db-instance does not support --dry-run (AWS CLI v2 confirmed)
@@ -209,7 +210,7 @@ def test_aws_rds_command_has_no_dry_run_note():
 # ---------------------------------------------------------------------------
 
 
-def test_azure_managed_disk_command_format():
+def test_azure_managed_disk_command_format() -> None:
     arm_id = _azure_arm("rg-prod-eastus", "Microsoft.Compute", "disks", "orphan-disk-01")
     resource = _resource(
         provider="azure",
@@ -230,7 +231,7 @@ def test_azure_managed_disk_command_format():
 # ---------------------------------------------------------------------------
 
 
-def test_azure_virtual_machine_command_format():
+def test_azure_virtual_machine_command_format() -> None:
     arm_id = _azure_arm(
         "rg-prod-eastus", "Microsoft.Compute", "virtualMachines", "vm-legacy-analytics"
     )
@@ -253,7 +254,7 @@ def test_azure_virtual_machine_command_format():
 # ---------------------------------------------------------------------------
 
 
-def test_azure_public_ip_command_format():
+def test_azure_public_ip_command_format() -> None:
     arm_id = _azure_arm(
         "rg-prod-eastus", "Microsoft.Network", "publicIPAddresses", "pip-old-test-01"
     )
@@ -278,7 +279,7 @@ def test_azure_public_ip_command_format():
 # ---------------------------------------------------------------------------
 
 
-def test_azure_sql_database_command_format():
+def test_azure_sql_database_command_format() -> None:
     arm_id = _azure_arm(
         "rg-prod-eastus",
         "Microsoft.Sql",

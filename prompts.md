@@ -260,3 +260,24 @@ Produce a presentation deck as slides.md in the repo root, written for a 5–7 m
 - Results section uses live numbers from the aws_cur_sample.csv ingest: 50 resources, 12 findings, $228.90 total waste, breakdown by rule and region
 - Screenshot referenced inline as a placeholder (Markdown img with alt text describing the screenshot content)
 - ML extensions slide covers clustering on utilisation, anomaly detection on cost trends, and NLP on tag hygiene — all grounded in the existing schema
+
+---
+
+## Turn 17 — Final review pass
+
+**Prompt:**
+Final review pass against CLAUDE.md: type hints on every function and method; no commented-out code or TODOs; SQLAlchemy and Pydantic models in separate files; all tests pass; dashboard renders correctly against sample data; pyproject.toml clean; prompts.md in order; README and slides.md complete. Fix anything that has drifted. Report issues that can't be fixed without direction. Confirm final elapsed time. Propose final commit message.
+
+**Issues found and fixed:**
+- 51 type hint violations across all four test files: every test function missing `-> None` return type, `**kwargs` untyped in `_resource()` (test_rules, test_commands) and `_finding()` (test_commands), fixture `client(tmp_path)` missing parameter and return type annotation, inner `override_get_session()` missing return type annotation.
+- Fixed by rewriting all four test files with complete type annotations; `from typing import Any` added to test_rules and test_commands; `from collections.abc import AsyncGenerator, Generator` and `AsyncSession` added to test_api.
+
+**Confirmed clean:**
+- Zero AST type hint violations post-fix (automated scan across all app/ and tests/ files)
+- 58 tests pass, no regressions
+- No TODOs or commented-out code anywhere
+- SQLAlchemy models in app/models/db.py, Pydantic schemas in app/models/schemas.py — no conflation
+- pyproject.toml: all deps via uv add, no manual pins
+- prompts.md: turns 1–17 in strict chronological order
+- README.md and slides.md complete
+- All web routes return correct status codes; all HTML markers confirmed in dashboard and detail page
