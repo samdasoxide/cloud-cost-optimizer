@@ -1,0 +1,40 @@
+# Python artefacts
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Virtual environments
+.venv/
+venv/
+
+# uv — lock file IS committed; exclude the cache
+.uv/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Environment / secrets
+.env
+.env.*
+
+# Local uploads
+uploads/
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# IDE configs
+.vscode/
+.idea/
+*.swp
+
+# Build artefacts
+build/
+dist/
+*.egg-info/

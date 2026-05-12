@@ -13,6 +13,16 @@ Rules:
 
 ---
 
+## Turn 4
+
+**Prompt:**
+approve this commit. You missed adding a .gitignore in the scaffold turn. Add one now at the repo root covering: Python artefacts (pycache/, *.pyc, .pyo, .pytest_cache/, .ruff_cache/, .mypy_cache/), virtual environments (.venv/, venv/), uv artefacts that shouldn't be tracked (note: uv.lock SHOULD be committed), the SQLite database files (.db, *.sqlite, .sqlite3), environment files (.env, .env.), OS noise (.DS_Store, Thumbs.db), IDE configs (.vscode/, .idea/, *.swp), build artefacts (build/, dist/, *.egg-info/), and any local upload directory if we have one.
+Check the current git status — if any of these are already tracked, untrack them with git rm --cached and include that in the commit. Propose the commit message.
+
+**Note:** Also removed uv init boilerplate root main.py (entrypoint is app/main.py). No tracked files were caught by the new .gitignore rules.
+
+---
+
 ## Turn 3
 
 **Prompt:**
