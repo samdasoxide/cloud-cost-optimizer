@@ -174,3 +174,30 @@ Propose the commit message at the end. Report elapsed time.
 - UnusedPublicIPRule checks "IdleAddress" in lineItem/UsageType for Elastic IPs; AdditionalInfo.associatedResource == null for Azure public IPs.
 - evaluate_all wraps each rule.evaluate() in a try/except with a warning log so one bad rule doesn't abort the full evaluation.
 - 18 tests, 27 total across full suite — all pass.
+
+---
+
+## Turn 12 — Command generator
+
+**Prompt:**
+Implement app/commands/generator.py with a generate_command(finding: Finding, resource: Resource) -> str function that returns the appropriate decommission command. Before writing the generator, look up the actual CLI syntax on the web. Check the official command reference for: AWS CLI v2 ec2 delete-volume, ec2 terminate-instances, ec2 release-address, ec2 delete-snapshot, rds delete-db-instance; Azure CLI az disk delete, az vm delete, az network public-ip delete, az sql db delete. Report back briefly which doc URLs you confirmed against, then implement the generator.
+Behaviour: AWS resources produce AWS CLI v2 commands with --region and the resource identifier. Azure resources produce Azure CLI commands with resource group and resource name. Prepend each command with a comment line warning the user to review before executing, including the estimated monthly saving and the rule that flagged it. Where the underlying CLI supports a non-destructive preview flag (e.g. --dry-run on some EC2 commands), include guidance in the comment; do not invent dry-run flags for commands that don't support them. For RDS deletion, note in the comment that --skip-final-snapshot is destructive and should be reviewed. Attach the generated command to each Finding (set decommission_command) before it's persisted. Add tests in tests/test_commands.py: one positive test per rule type for AWS and one per Azure equivalent where applicable. Tests should assert the exact command string structure, not just that the result is non-empty. Propose the commit message at the end. Report elapsed time.
+
+**Doc URLs confirmed against:**
+- AWS: https://docs.aws.amazon.com/cli/latest/reference/ec2/delete-volume.html, /terminate-instances.html, /release-address.html, /delete-snapshot.html; https://docs.aws.amazon.com/cli/latest/reference/rds/delete-db-instance.html
+- Azure: https://learn.microsoft.com/en-us/cli/azure/disk?view=azure-cli-latest, /vm?view=azure-cli-latest, /network/public-ip?view=azure-cli-latest, /sql/db?view=azure-cli-latest
+
+**CLI facts confirmed (deviations from default assumptions):**
+- All four EC2 commands support --dry-run; rds delete-db-instance does NOT
+- az network public-ip delete has NO --yes flag (unlike disk/vm/sql which do)
+- az sql db delete requires --server <server-name> in addition to --name and --resource-group
+- ec2 release-address uses --allocation-id (VPC standard); --public-ip is deprecated (EC2-Classic)
+- rds delete-db-instance: --skip-final-snapshot skips snapshot and permanently deletes automated backups; default (--no-skip-final-snapshot) requires --final-db-snapshot-identifier
+- RDS resource IDs in CUR may be ARNs; generator strips arn:aws:rds:...:db: prefix to extract the identifier
+
+**Implementation notes:**
+- _parse_arm_id() extracts resource group and resource name from Azure ARM IDs; also extracts server name for SQL databases
+- _rds_identifier() strips ARN prefix from RDS resource IDs
+- Comment lines prepended to every command; dry-run note and RDS warning added conditionally by resource type
+- generate_command() signature: (finding: Finding, resource: Resource) -> str; attachment to finding.decommission_command happens at the call site (ingest pipeline)
+- 18 new tests, 45 total — all pass.
