@@ -247,3 +247,16 @@ Routes: GET / (summary cards + Chart.js doughnut + HTMX-filtered findings table)
 
 **Prompt:**
 Write README.md at the repo root covering: project overview (one paragraph); architecture diagram in Mermaid (upload → parser → rules engine → command generator → persistence → API and dashboard); the four detection rules with criteria and severity; how to run locally with uv; how to ingest sample fixtures (dashboard upload and curl); project structure overview; a Styling subsection noting Tailwind Play CDN + production build note; a safety note that generated commands are suggestions only and are never auto-executed; a short section on the vibe coding workflow linking to prompts.md. Propose commit message. Report elapsed time.
+
+---
+
+## Turn 16 — Presentation deck
+
+**Prompt:**
+Produce a presentation deck as slides.md in the repo root, written for a 5–7 minute walkthrough. Roughly 10 slides: Title, Problem, Approach (architect-and-direct vibe coding), Architecture (Mermaid diagram from README), Normalised schema, Rules engine, Command generation (example commands + safety posture), Dashboard (screenshot + operator workflow), Results on sample data, Where ML extends this, Workflow reflections. Clear headers, short bullets, each slide readable in 30 seconds. A screenshot of the running dashboard was provided. Propose commit message. Report elapsed time.
+
+**Implementation notes:**
+- Exact command examples drawn from generator.py source (UnattachedVolumeRule, vol-0b1b2c3d4e5f60003, us-west-2)
+- Results section uses live numbers from the aws_cur_sample.csv ingest: 50 resources, 12 findings, $228.90 total waste, breakdown by rule and region
+- Screenshot referenced inline as a placeholder (Markdown img with alt text describing the screenshot content)
+- ML extensions slide covers clustering on utilisation, anomaly detection on cost trends, and NLP on tag hygiene — all grounded in the existing schema
