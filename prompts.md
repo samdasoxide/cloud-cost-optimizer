@@ -136,3 +136,41 @@ The turn you just added to prompts.md is out of chronological order again — it
 Then add this clarification to your persistent memory (alongside the existing append-only rule):
 When a turn instructs you to add a previous prompt's text to prompts.md, that retroactive entry still goes in its correct chronological position based on when the original prompt was actually sent — not at the end. The append-only rule applies to new prompts; missed prompts are inserted at their true chronological position. After any such insertion, verify the full file is still in strict chronological order top to bottom.
 Confirm both fixes, show me the current list of turn headings top to bottom, then carry on.
+
+---
+
+## Turn 10 — Project state sanity-check
+
+**Prompt:**
+Before we build the rules engine, sanity-check the project state. Have a look at the contents of pyproject.toml and confirm each dependency's resolved version from uv.lock. Confirm every dependency was added via uv add without manual version pinning. If any version looks suspicious or stale, flag it. Also run uv run pytest and confirm the parser tests pass.
+No code changes expected — this is a verification turn. Update prompts.md in the right chronological order and report elapsed time.
+
+---
+
+## Turn 11 — Rules engine
+
+**Prompt:**
+Implement the rules engine in app/rules/engine.py with a Rule base class:
+
+    class Rule(ABC):
+        name: str
+        severity: Literal["low", "medium", "high"]
+        def evaluate(self, resource: Resource) -> Finding | None: ...
+
+An evaluate_all(resources, rules) function runs every rule against every resource and returns the list of findings.
+Implement four concrete rules in app/rules/:
+* UnattachedVolumeRule: EBS or Azure managed disk with no attachment, severity medium
+* IdleComputeRule: EC2 or Azure VM with average CPU under 5% for 14+ days (read from usage metrics in raw_export), severity high
+* UnusedPublicIPRule: Elastic IP or public IP not associated with a running resource, severity low
+* OldSnapshotRule: snapshot older than 90 days, severity low
+Each Finding must include clear evidence (the specific values that triggered the rule), estimated_monthly_saving_usd derived from the resource's monthly_cost_usd, and the correct severity.
+Add tests in tests/test_rules.py: for each rule, one positive case (resource that should trigger) and one negative case (resource that should not). Use small in-memory Resource fixtures constructed in the test, not the sample data files.
+Propose the commit message at the end. Report elapsed time.
+
+**Implementation notes:**
+- IdleComputeRule reads avg_cpu_percent and metrics_period_days from raw_export records (fields added during ingestion enrichment from CloudWatch/Azure Monitor).
+- OldSnapshotRule resolves creation date from tags (key: CreatedDate / created_date / created-date) then raw_export (keys: creation_date, snapshot_date). Skips if no date found.
+- UnattachedVolumeRule checks lineItem/Operation == "CreateVolume-Unattached" for EBS; AdditionalInfo.diskState == "Unattached" for managed disks.
+- UnusedPublicIPRule checks "IdleAddress" in lineItem/UsageType for Elastic IPs; AdditionalInfo.associatedResource == null for Azure public IPs.
+- evaluate_all wraps each rule.evaluate() in a try/except with a warning log so one bad rule doesn't abort the full evaluation.
+- 18 tests, 27 total across full suite — all pass.
