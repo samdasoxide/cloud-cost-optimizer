@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Billing Export — Cloud Cost Optimizer{% endblock %}
+
+{% block content %}
+
+<!-- Back link -->
+<div class="mb-6">
+  <a href="/"
+     class="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 transition-colors">
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+    </svg>
+    Back to Dashboard
+  </a>
+</div>
+
+<div class="mx-auto max-w-xl">
+
+  <div class="mb-6">
+    <h1 class="text-xl font-bold text-slate-900">Upload Billing Export</h1>
+    <p class="mt-1 text-sm text-slate-500">
+      Ingest an AWS Cost and Usage Report (CSV) or an Azure Cost Management export (JSON)
+      to detect orphaned resources.
+    </p>
+  </div>
+
+  {% if error %}
+  <div class="mb-5 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+    <strong>Upload failed:</strong> {{ error }}
+  </div>
+  {% endif %}
+
+  <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+    <form action="/upload" method="post" enctype="multipart/form-data" class="space-y-5">
+
+      <!-- Provider -->
+      <fieldset>
+        <legend class="block text-sm font-semibold text-slate-700 mb-2">Cloud Provider</legend>
+        <div class="flex gap-4">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="provider" value="aws" required
+                   class="accent-sky-600"
+                   checked />
+            <span class="text-sm text-slate-700 font-medium">
+              AWS
+              <span class="text-xs text-slate-400 font-normal">(CUR CSV)</span>
+            </span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="provider" value="azure"
+                   class="accent-sky-600" />
+            <span class="text-sm text-slate-700 font-medium">
+              Azure
+              <span class="text-xs text-slate-400 font-normal">(Cost Management JSON)</span>
+            </span>
+          </label>
+        </div>
+      </fieldset>
+
+      <!-- File -->
+      <div>
+        <label for="file" class="block text-sm font-semibold text-slate-700 mb-2">Export File</label>
+        <div class="relative">
+          <input type="file" name="file" id="file" required
+                 accept=".csv,.json"
+                 class="block w-full text-sm text-slate-600
+                   file:mr-3 file:py-2 file:px-4
+                   file:rounded-md file:border-0
+                   file:text-sm file:font-medium
+                   file:bg-sky-600 file:text-white
+                   hover:file:bg-sky-500
+                   file:cursor-pointer file:transition-colors
+                   border border-slate-200 rounded-lg bg-slate-50 px-3 py-2
+                   focus:outline-none focus:ring-2 focus:ring-sky-500" />
+        </div>
+        <p class="mt-1.5 text-xs text-slate-400">Accepted formats: .csv (AWS CUR), .json (Azure)</p>
+      </div>
+
+      <!-- Submit -->
+      <div class="pt-2 flex items-center gap-4">
+        <button type="submit"
+                class="inline-flex items-center gap-2 rounded-md bg-sky-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-sky-500 transition-colors focus:outline-none focus:ring-2 focus:ring-sky-500 focus:ring-offset-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+          </svg>
+          Ingest &amp; Analyse
+        </button>
+        <a href="/" class="text-sm text-slate-400 hover:text-slate-600 transition-colors">Cancel</a>
+      </div>
+
+    </form>
+  </div>
+
+  <!-- Help text -->
+  <div class="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-4 text-xs text-slate-500 space-y-1.5">
+    <p class="font-semibold text-slate-600">Format notes</p>
+    <p><strong>AWS:</strong> Export a Cost and Usage Report (CUR 2.0) from the Billing console. The CSV must include columns such as <code class="font-mono">lineItem/ResourceId</code>, <code class="font-mono">lineItem/UnblendedCost</code>, and <code class="font-mono">product/region</code>.</p>
+    <p><strong>Azure:</strong> Export from Cost Management → Exports. Select the EA usage-details format (JSON). The file must include <code class="font-mono">resourceId</code>, <code class="font-mono">costInBillingCurrency</code>, and <code class="font-mono">resourceLocation</code>.</p>
+  </div>
+
+</div>
+
+{% endblock %}

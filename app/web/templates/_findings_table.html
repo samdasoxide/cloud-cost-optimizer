@@ -1,0 +1,84 @@
+{% set severity_badge = {
+  "high":   "bg-rose-100 text-rose-700 ring-rose-200",
+  "medium": "bg-amber-100 text-amber-700 ring-amber-200",
+  "low":    "bg-blue-100 text-blue-700 ring-blue-200",
+  "critical": "bg-purple-100 text-purple-700 ring-purple-200"
+} %}
+
+{% set provider_badge = {
+  "aws":   "bg-orange-100 text-orange-700",
+  "azure": "bg-sky-100 text-sky-700"
+} %}
+
+<p class="text-sm text-slate-500 mb-3">
+  Showing <span class="font-medium text-slate-700">{{ findings | length }}</span>
+  of <span class="font-medium text-slate-700">{{ total }}</span> findings
+</p>
+
+{% if findings %}
+<div class="overflow-x-auto rounded-lg border border-slate-200">
+  <table class="min-w-full divide-y divide-slate-200 text-sm">
+    <thead class="bg-slate-50">
+      <tr>
+        <th class="px-4 py-3 text-left font-semibold text-slate-600 w-12">#</th>
+        <th class="px-4 py-3 text-left font-semibold text-slate-600">Resource</th>
+        <th class="px-4 py-3 text-left font-semibold text-slate-600">Provider</th>
+        <th class="px-4 py-3 text-left font-semibold text-slate-600">Region</th>
+        <th class="px-4 py-3 text-left font-semibold text-slate-600">Rule</th>
+        <th class="px-4 py-3 text-left font-semibold text-slate-600">Severity</th>
+        <th class="px-4 py-3 text-right font-semibold text-slate-600">Est. Saving / mo</th>
+        <th class="px-4 py-3 text-center font-semibold text-slate-600 w-20">Detail</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-slate-100 bg-white">
+      {% for f in findings %}
+      <tr class="hover:bg-slate-50 transition-colors">
+        <td class="px-4 py-3 text-slate-400 font-mono text-xs">{{ f.id }}</td>
+        <td class="px-4 py-3 max-w-xs">
+          <div class="font-medium text-slate-800 truncate" title="{{ f.resource.resource_id }}">
+            {{ f.resource.resource_id | truncate(40, True, '…') }}
+          </div>
+          <div class="text-xs text-slate-400">{{ f.resource.resource_type }}</div>
+        </td>
+        <td class="px-4 py-3">
+          <span class="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium
+            {{ provider_badge.get(f.resource.provider, 'bg-slate-100 text-slate-600') }}">
+            {{ f.resource.provider | upper }}
+          </span>
+        </td>
+        <td class="px-4 py-3 text-slate-600 text-xs font-mono">{{ f.resource.region }}</td>
+        <td class="px-4 py-3 text-slate-700 text-xs">
+          {{ f.rule_name | replace('_', ' ') | title }}
+        </td>
+        <td class="px-4 py-3">
+          <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset
+            {{ severity_badge.get(f.severity, 'bg-slate-100 text-slate-600 ring-slate-200') }}">
+            {{ f.severity | capitalize }}
+          </span>
+        </td>
+        <td class="px-4 py-3 text-right font-semibold text-emerald-700 tabular-nums">
+          ${{ "%.2f" | format(f.estimated_monthly_saving_usd) }}
+        </td>
+        <td class="px-4 py-3 text-center">
+          <a href="/findings/{{ f.id }}"
+             class="inline-flex items-center gap-1 text-sky-600 hover:text-sky-800 text-xs font-medium transition-colors">
+            View
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+            </svg>
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="rounded-lg border border-dashed border-slate-300 bg-white py-16 text-center">
+  <svg class="mx-auto mb-3 w-8 h-8 text-slate-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"/>
+  </svg>
+  <p class="text-sm text-slate-500 font-medium">No findings match the selected filters.</p>
+  <p class="text-xs text-slate-400 mt-1">Try clearing the filters or uploading a billing export.</p>
+</div>
+{% endif %}

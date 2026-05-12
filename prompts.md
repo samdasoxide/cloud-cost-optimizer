@@ -221,3 +221,22 @@ After implementation, runtime sanity check: add GET /health, start uvicorn, curl
 - app/api/routes.py holds all four route handlers; app/api/__init__.py includes the router
 - Runtime check: /health → 200 {"status":"ok"}, /docs → 200, /api/summary → 200 {"total_resources":0,...}
 - 13 new tests, 58 total — all pass, no warnings
+
+---
+
+## Turn 14 — Jinja2/HTMX dashboard
+
+**Prompt:**
+Build the dashboard using Jinja2 templates served from FastAPI, HTMX for interactivity, and Tailwind via Play CDN for styling. Templates live in app/web/templates/. Use the Tailwind Play CDN (@tailwindcss/browser@4) rather than generating a custom stylesheet. Include HTMX and Chart.js from their official CDNs. Do not generate any custom CSS file. The only exception is a <style type="text/tailwindcss"> block in the base template. Configure Tailwind with a minimal config: extend theme with neutral colour palette (slate), one accent colour (sky), system font stack as default font family.
+Routes: GET / (summary cards + Chart.js doughnut + HTMX-filtered findings table); GET /findings/{id} (detail page with evidence JSON pre block and copy-to-clipboard decommission command); POST /upload (form-based upload wrapping the API ingest endpoint, redirects to dashboard on success).
+
+**Implementation notes:**
+- Starlette 1.0.0 installed (fastapi>=0.136.1 dependency) — TemplateResponse signature is now (request, name, context) instead of the old (name, {"request": request, ...}). All calls updated accordingly.
+- Templates: base.html (nav, CDN includes, @theme font/accent), index.html (4 KPI cards, doughnut chart, HTMX filter form, findings table via {% include %}), _findings_table.html (HTMX swap partial: count + table rows or empty state), detail.html (resource info, evidence <pre>, decommission command code block with vanilla JS copy-to-clipboard), upload.html (provider radio + file input form, error display).
+- HTMX pattern: each <select> in the filter form carries hx-get="/findings-table" hx-trigger="change" hx-target="#findings-section" hx-swap="innerHTML" hx-include="closest form"; the partial replaces the full count+table block on every filter change.
+- Chart.js doughnut: waste by provider, keyed from a separate SQL aggregation query (not from the existing /api/summary).
+- app/web/__init__.py updated to re-export router from app.web.routes.
+- app/web/routes.py: 5 routes (GET /, GET /findings-table, GET /findings/{id}, GET /upload, POST /upload); replicates ingest pipeline logic inline (no service extraction — scope does not justify it).
+- No StaticFiles mount (zero local assets; everything served from CDN).
+- Runtime checks: GET / → 200, GET /upload → 200, GET /findings-table → 200, GET /findings/999 → 404; all HTML markers (CDN URLs, HTMX target, page title) confirmed; ingest + dashboard + detail page tested with aws_cur_sample.csv (50 resources, 12 findings).
+- 58 tests — all pass, no regressions.

@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — Cloud Cost Optimizer{% endblock %}
+
+{% block content %}
+
+<!-- Page header -->
+<div class="mb-8 flex items-center justify-between">
+  <div>
+    <h1 class="text-2xl font-bold text-slate-900">Cloud Cost Dashboard</h1>
+    <p class="mt-1 text-sm text-slate-500">Orphaned resource findings across AWS and Azure</p>
+  </div>
+</div>
+
+<!-- KPI summary cards -->
+<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+
+  <!-- Total waste -->
+  <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Est. Monthly Waste</p>
+    <p class="mt-2 text-3xl font-bold text-sky-600 tabular-nums">
+      ${{ "%.0f" | format(total_waste) }}
+    </p>
+    <p class="mt-1 text-xs text-slate-400">across all findings</p>
+  </div>
+
+  <!-- Total orphans -->
+  <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">Total Orphans</p>
+    <p class="mt-2 text-3xl font-bold text-slate-800 tabular-nums">{{ total_findings }}</p>
+    <p class="mt-1 text-xs text-slate-400">{{ total_resources }} resources ingested</p>
+  </div>
+
+  <!-- By provider -->
+  <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">By Provider</p>
+    <div class="mt-2 flex flex-col gap-1.5">
+      {% if findings_by_provider %}
+        {% for prov, cnt in findings_by_provider.items() %}
+        <div class="flex items-center justify-between">
+          <span class="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium
+            {% if prov == 'aws' %}bg-orange-100 text-orange-700{% else %}bg-sky-100 text-sky-700{% endif %}">
+            {{ prov | upper }}
+          </span>
+          <span class="text-sm font-semibold text-slate-700 tabular-nums">{{ cnt }}</span>
+        </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-sm text-slate-400">No data yet</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- By severity -->
+  <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">By Severity</p>
+    <div class="mt-2 flex flex-col gap-1.5">
+      {% for sev, label, cls in [
+        ("high",   "High",   "text-rose-600"),
+        ("medium", "Medium", "text-amber-600"),
+        ("low",    "Low",    "text-blue-600"),
+      ] %}
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-medium {{ cls }}">{{ label }}</span>
+        <span class="text-sm font-semibold text-slate-700 tabular-nums">
+          {{ findings_by_severity.get(sev, 0) }}
+        </span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+</div>
+
+<!-- Chart + top context row -->
+<div class="grid grid-cols-1 gap-6 lg:grid-cols-3 mb-10">
+
+  <!-- Waste by provider doughnut -->
+  <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-1">
+    <h2 class="text-sm font-semibold text-slate-700 mb-4">Waste by Provider</h2>
+    {% if waste_by_provider %}
+    <div class="flex items-center justify-center" style="height:200px;">
+      <canvas id="providerChart"></canvas>
+    </div>
+    <script>
+      (function () {
+        const ctx = document.getElementById('providerChart');
+        const PALETTE = ['#f97316', '#0ea5e9', '#8b5cf6', '#10b981'];
+        new Chart(ctx, {
+          type: 'doughnut',
+          data: {
+            labels: {{ chart_labels | safe }},
+            datasets: [{
+              data: {{ chart_data | safe }},
+              backgroundColor: PALETTE.slice(0, {{ waste_by_provider | length }}),
+              borderWidth: 2,
+              borderColor: '#ffffff',
+              hoverOffset: 6,
+            }]
+          },
+          options: {
+            cutout: '68%',
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: {
+                  font: { size: 12 },
+                  color: '#475569',
+                  padding: 14,
+                  boxWidth: 12,
+                  boxHeight: 12,
+                }
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(ctx) {
+                    return ' $' + ctx.parsed.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2}) + '/mo';
+                  }
+                }
+              }
+            },
+            maintainAspectRatio: false,
+          }
+        });
+      })();
+    </script>
+    {% else %}
+    <div class="flex items-center justify-center" style="height:200px;">
+      <p class="text-sm text-slate-400">No data — upload a billing export to begin.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Quick-action: upload prompt when empty, or ingest summary -->
+  <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2 flex flex-col">
+    <h2 class="text-sm font-semibold text-slate-700 mb-4">Getting Started</h2>
+    {% if total_findings == 0 %}
+    <div class="flex flex-1 flex-col items-center justify-center gap-4 py-6">
+      <svg class="w-10 h-10 text-slate-200" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5"/>
+      </svg>
+      <div class="text-center">
+        <p class="text-sm font-medium text-slate-700">No findings yet</p>
+        <p class="text-xs text-slate-400 mt-1">Upload an AWS CUR CSV or Azure billing JSON export to detect orphaned resources.</p>
+      </div>
+      <a href="/upload"
+         class="inline-flex items-center gap-2 rounded-md bg-sky-600 px-4 py-2 text-sm font-medium text-white hover:bg-sky-500 transition-colors">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+        </svg>
+        Upload Billing Export
+      </a>
+    </div>
+    {% else %}
+    <ul class="divide-y divide-slate-100 text-sm flex-1">
+      <li class="flex justify-between py-2.5">
+        <span class="text-slate-500">Resources scanned</span>
+        <span class="font-semibold text-slate-800 tabular-nums">{{ total_resources }}</span>
+      </li>
+      <li class="flex justify-between py-2.5">
+        <span class="text-slate-500">Orphan findings</span>
+        <span class="font-semibold text-slate-800 tabular-nums">{{ total_findings }}</span>
+      </li>
+      <li class="flex justify-between py-2.5">
+        <span class="text-slate-500">High-severity</span>
+        <span class="font-semibold text-rose-600 tabular-nums">{{ findings_by_severity.get('high', 0) }}</span>
+      </li>
+      <li class="flex justify-between py-2.5">
+        <span class="text-slate-500">Total monthly waste</span>
+        <span class="font-bold text-sky-600 tabular-nums">${{ "%.2f" | format(total_waste) }}</span>
+      </li>
+    </ul>
+    <div class="pt-4 border-t border-slate-100 mt-2">
+      <a href="/upload"
+         class="inline-flex items-center gap-1.5 text-xs text-sky-600 hover:text-sky-800 font-medium transition-colors">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+        </svg>
+        Upload another export
+      </a>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+
+<!-- Findings table section -->
+<div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-5">
+    <h2 class="text-sm font-semibold text-slate-700">Findings</h2>
+
+    <!-- Filter form — HTMX fires on any select change -->
+    <form id="filter-form"
+          class="flex flex-wrap items-center gap-2">
+
+      <select name="provider"
+              hx-get="/findings-table"
+              hx-trigger="change"
+              hx-target="#findings-section"
+              hx-swap="innerHTML"
+              hx-include="#filter-form"
+              class="rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
+        <option value="">All providers</option>
+        <option value="aws"   {% if filters.provider == 'aws'   %}selected{% endif %}>AWS</option>
+        <option value="azure" {% if filters.provider == 'azure' %}selected{% endif %}>Azure</option>
+      </select>
+
+      <select name="severity"
+              hx-get="/findings-table"
+              hx-trigger="change"
+              hx-target="#findings-section"
+              hx-swap="innerHTML"
+              hx-include="#filter-form"
+              class="rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
+        <option value="">All severities</option>
+        <option value="high"   {% if filters.severity == 'high'   %}selected{% endif %}>High</option>
+        <option value="medium" {% if filters.severity == 'medium' %}selected{% endif %}>Medium</option>
+        <option value="low"    {% if filters.severity == 'low'    %}selected{% endif %}>Low</option>
+      </select>
+
+      <select name="rule_name"
+              hx-get="/findings-table"
+              hx-trigger="change"
+              hx-target="#findings-section"
+              hx-swap="innerHTML"
+              hx-include="#filter-form"
+              class="rounded-md border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-sky-500">
+        <option value="">All rules</option>
+        {% for rn in rule_names %}
+        <option value="{{ rn }}" {% if filters.rule_name == rn %}selected{% endif %}>
+          {{ rn | replace('_', ' ') | title }}
+        </option>
+        {% endfor %}
+      </select>
+
+      <a href="/"
+         class="rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-500 hover:text-slate-700 hover:border-slate-300 transition-colors">
+        Reset
+      </a>
+
+    </form>
+  </div>
+
+  <!-- HTMX swap target: the partial replaces this entire div's inner HTML -->
+  <div id="findings-section">
+    {% include "_findings_table.html" %}
+  </div>
+</div>
+
+{% endblock %}
