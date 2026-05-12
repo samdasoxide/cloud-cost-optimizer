@@ -240,3 +240,10 @@ Routes: GET / (summary cards + Chart.js doughnut + HTMX-filtered findings table)
 - No StaticFiles mount (zero local assets; everything served from CDN).
 - Runtime checks: GET / → 200, GET /upload → 200, GET /findings-table → 200, GET /findings/999 → 404; all HTML markers (CDN URLs, HTMX target, page title) confirmed; ingest + dashboard + detail page tested with aws_cur_sample.csv (50 resources, 12 findings).
 - 58 tests — all pass, no regressions.
+
+---
+
+## Turn 15 — README
+
+**Prompt:**
+Write README.md at the repo root covering: project overview (one paragraph); architecture diagram in Mermaid (upload → parser → rules engine → command generator → persistence → API and dashboard); the four detection rules with criteria and severity; how to run locally with uv; how to ingest sample fixtures (dashboard upload and curl); project structure overview; a Styling subsection noting Tailwind Play CDN + production build note; a safety note that generated commands are suggestions only and are never auto-executed; a short section on the vibe coding workflow linking to prompts.md. Propose commit message. Report elapsed time.
