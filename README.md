@@ -48,7 +48,7 @@ Each finding records the specific field values that triggered it (`evidence`), t
 ```bash
 # Clone and install dependencies
 git clone <repo-url>
-cd "Woulters Kulwer"
+cd "cloud-cost-optimizer"
 uv sync
 
 # Start the development server
