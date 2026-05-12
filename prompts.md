@@ -1,7 +1,8 @@
 # Prompts Audit Log
 
 Chronological record of every prompt sent during this session, in the order received.
-New entries are always appended under ## Turn N — <descriptor>. Never inserted, never re-numbered.
+New entries are always appended at the very end under ## Turn N — <descriptor>.
+N is exactly one greater than the previous final turn number. Never insert, never re-number.
 
 ---
 
@@ -87,9 +88,29 @@ Check the current git status — if any of these are already tracked, untrack th
 
 **Prompt:**
 Approve this commit and I notice the entries in prompts.md are not in chronological order — you're inserting prompts between earlier turns rather than appending. Fix this now:
-
 Reorder all existing entries in prompts.md so they appear in the exact chronological order I sent them. Use this numbering: Turn 1 (the Lead Architect opener), Turn 2 (CLAUDE.md), Turn 3 (scaffold), then whatever order subsequent prompts were actually sent in.
 Going forward, every new prompt must be appended to the end of prompts.md under a new heading ## Turn N — <short descriptor> where N is the next sequential number. Never insert in the middle, never re-number existing turns, never re-group.
 Include a short header at the top of prompts.md explaining the file is a chronological audit log of every prompt sent, in order.
-
 Show me the reordered file before committing. Propose the commit message as docs: reorder prompts.md chronologically and lock append-only convention.
+
+---
+
+## Turn 6 — Sample billing export fixtures
+
+**Prompt:**
+Generate realistic sample billing export files in sample_data/. Before producing the files, look up the actual schemas on the web to confirm field names, types, and structure. Specifically check AWS CUR column reference and Azure billing export (Cost Management exports) docs. Report back briefly what schema you're using and which doc you confirmed it against, then produce the fixtures. For AWS, produce aws_cur_sample.csv with at least 50 rows covering EC2 instances, EBS volumes, Elastic IPs, RDS instances, and S3 buckets — mix of active and orphaned resources. For Azure, produce azure_billing_sample.json with managed disks, VMs, public IPs, SQL databases. Use realistic resource ARNs/IDs and regions. The fixtures must be deterministic; orphan distribution obvious. Note: real billing exports don't directly indicate "unattached" or "idle" — we'll infer these from usage metrics, cost patterns, and resource state fields. Add sample_data/README.md describing contents.
+
+**Schema sources confirmed against live docs:**
+- AWS: https://docs.aws.amazon.com/cur/latest/userguide/data-dictionary.html (CUR 2.0, 30 columns across identity/*, lineItem/*, product/*, pricing/*, resourceTags/user:*)
+- Azure: https://learn.microsoft.com/en-us/azure/cost-management-billing/automate/understand-usage-details-fields (EA format, 27 fields including full ARM ResourceId path)
+
+**Output:** aws_cur_sample.csv (50 rows, 30 columns), azure_billing_sample.json (24 records), sample_data/README.md
+
+---
+
+## Turn 7 — Context check + fix ordering + parsers
+
+**Prompt:**
+Two things in this turn.
+First, fix prompts.md ordering and harden the convention. The append-only rule isn't holding. Reorder prompts.md so every turn appears in strict chronological order matching when I actually sent it. The most recent turn must be the last entry in the file, always. Then update CLAUDE.md by replacing the prompts.md rule in the workflow section with this stricter version: prompts.md is strictly append-only and chronological. Each new turn is appended at the very end of the file, under a heading ## Turn N — <short descriptor> where N is exactly one greater than the previous final turn number. Before writing any new entry, read the current final turn number in prompts.md and increment from there. Never insert between existing turns. Never re-number. Never re-group by topic. Never reorder. If you believe a reorder would improve readability, do not do it — propose it to me first. Chronological order is non-negotiable because prompts.md is the audit log of architectural decisions in the order they were made; reordering destroys its value.
+Second, implement the parsers. Build app/parsers/aws.py and app/parsers/azure.py. Each module exposes a single function parse(file_path: Path) -> list[Resource] returning normalised SQLAlchemy Resource objects. The parsers must: map provider-specific fields to the common Resource schema, preserve the original row in raw_export, aggregate line items per resource (one Resource per unique resource_id, summing monthly_cost), skip malformed rows with a logged warning, use pandas for AWS CSV and stdlib json for Azure. Add tests in tests/test_parsers.py. Run uv run pytest tests/test_parsers.py. Propose two commit messages.

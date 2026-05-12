@@ -66,5 +66,5 @@ Cloud Cost Optimizer and Remediation Engine. Ingests AWS and Azure billing expor
 ## Workflow Rules
 
 - No manual edits — all logic and fixes are provided here.
-- `prompts.md` maintained every turn with the prompt used that turn.
 - Elapsed time reported at the end of every response.
+- `prompts.md` is strictly append-only and chronological. Each new turn is appended at the very end of the file, under a heading `## Turn N — <short descriptor>` where N is exactly one greater than the previous final turn number. Before writing any new entry, read the current final turn number in `prompts.md` and increment from there. Never insert between existing turns. Never re-number. Never re-group by topic. Never reorder. If you believe a reorder would improve readability, do not — propose it to the user first. Chronological order is non-negotiable: `prompts.md` is the audit log of architectural decisions in the order they were made; reordering destroys its value.
