@@ -1,8 +1,11 @@
 # Prompts Audit Log
 
+Chronological record of every prompt sent during this session, in the order received.
+New entries are always appended under ## Turn N — <descriptor>. Never inserted, never re-numbered.
+
 ---
 
-## Turn 1
+## Turn 1 — Lead Architect opener
 
 **Prompt:**
 Lead Architect mode: ON. We are building a Python-based, API-first Cloud Cost Optimizer and Remediation Engine using a free database and a dashboard.
@@ -13,17 +16,31 @@ Rules:
 
 ---
 
-## Turn 4
+## Turn 2 — CLAUDE.md technical brief
 
 **Prompt:**
-approve this commit. You missed adding a .gitignore in the scaffold turn. Add one now at the repo root covering: Python artefacts (pycache/, *.pyc, .pyo, .pytest_cache/, .ruff_cache/, .mypy_cache/), virtual environments (.venv/, venv/), uv artefacts that shouldn't be tracked (note: uv.lock SHOULD be committed), the SQLite database files (.db, *.sqlite, .sqlite3), environment files (.env, .env.), OS noise (.DS_Store, Thumbs.db), IDE configs (.vscode/, .idea/, *.swp), build artefacts (build/, dist/, *.egg-info/), and any local upload directory if we have one.
-Check the current git status — if any of these are already tracked, untrack them with git rm --cached and include that in the commit. Propose the commit message.
-
-**Note:** Also removed uv init boilerplate root main.py (entrypoint is app/main.py). No tracked files were caught by the new .gitignore rules.
+Acknowledged. Before any feature code, let's establish the standing technical brief. Create CLAUDE.md at the repo root with the following sections:
+Project
+Cloud Cost Optimizer and Remediation Engine. Ingests AWS and Azure billing exports, identifies orphaned resources, generates decommission CLI commands, exposes findings via API and dashboard.
+Stack
+Python 3.14, uv for dependency management, FastAPI, SQLAlchemy 2.0 with SQLite, Pydantic v2 for API schemas, pandas for CSV parsing, Jinja2 with HTMX for the dashboard, Chart.js via CDN for visualisations, pytest for tests.
+Dependency management
+Always use uv add <package> to add dependencies. Never write version strings, never edit pyproject.toml manually, never use pip. If a version constraint is genuinely needed, run uv pip index versions <package> first to confirm versions that exist on PyPI — never invent version numbers from memory. Run code via uv run and tests via uv run pytest. pyproject.toml must declare requires-python = ">=3.14". If uv add fails due to a Python 3.14 incompatibility, report it immediately rather than silently downgrading Python or working around it.
+Code conventions
+Type hints on every function and method. SQLAlchemy models in models/db.py and Pydantic schemas in models/schemas.py kept strictly separate. Async FastAPI endpoints where IO bound. Dependency injection for the database session via a get_session FastAPI dependency. Structured logging via the standard logging module. No commented-out code, no TODOs left behind — either implement it or remove it.
+Testing
+Write tests alongside implementation in the same turn, not in a separate pass. Use pytest. Test the business logic that matters: parsers (correct normalisation, malformed input handled), rules engine (each rule has at least one positive and one negative case), and one end-to-end API integration test that ingests a sample fixture and verifies findings appear via the API. Do not test framework plumbing, dashboard rendering, trivial getters, or SQLAlchemy model definitions. Aim for tests that read like specifications — clear names, one assertion of behaviour per test where practical. Tests live in tests/ mirroring the app/ structure. Run with uv run pytest.
+Architecture
+Parsers normalise provider-specific exports into a common Resource schema. A rules engine evaluates orphan patterns producing Findings. A command generator emits decommission CLI commands attached to Findings. FastAPI exposes ingest, list, detail, and summary endpoints. A Jinja and HTMX dashboard renders the findings.
+Git workflow
+Commit per architectural step using Conventional Commits format (feat:, fix:, test:, docs:, chore:, refactor:). Subject line under 72 characters, imperative mood, no trailing full stop. Body explains the why, not the what, in 2 to 4 lines. Reference the prompts.md turn number when relevant (e.g. "Ref: prompts.md turn 6"). Group implementation with its tests in the same commit. Split unrelated changes into separate commits. At the end of any turn that produces code changes, automatically propose a commit message before completing the response — do not commit until I approve. Never amend pushed commits, never force push, never rewrite history.
+Workflow rules (already acknowledged in the opening prompt)
+No manual edits by me — you provide all logic and fixes. prompts.md maintained every turn with the prompt I just used. Elapsed time reported at the end of every response.
+Create the file with these sections, then confirm. Do not scaffold the project yet — that's the next prompt.
 
 ---
 
-## Turn 3
+## Turn 3 — Project scaffold
 
 **Prompt:**
 approve the commit then
@@ -56,24 +73,23 @@ Propose the commit message at the end. Report elapsed time.
 
 ---
 
-## Turn 2
+## Turn 4 — .gitignore
 
 **Prompt:**
-Acknowledged. Before any feature code, let's establish the standing technical brief. Create CLAUDE.md at the repo root with the following sections:
-Project
-Cloud Cost Optimizer and Remediation Engine. Ingests AWS and Azure billing exports, identifies orphaned resources, generates decommission CLI commands, exposes findings via API and dashboard.
-Stack
-Python 3.14, uv for dependency management, FastAPI, SQLAlchemy 2.0 with SQLite, Pydantic v2 for API schemas, pandas for CSV parsing, Jinja2 with HTMX for the dashboard, Chart.js via CDN for visualisations, pytest for tests.
-Dependency management
-Always use uv add <package> to add dependencies. Never write version strings, never edit pyproject.toml manually, never use pip. If a version constraint is genuinely needed, run uv pip index versions <package> first to confirm versions that exist on PyPI — never invent version numbers from memory. Run code via uv run and tests via uv run pytest. pyproject.toml must declare requires-python = ">=3.14". If uv add fails due to a Python 3.14 incompatibility, report it immediately rather than silently downgrading Python or working around it.
-Code conventions
-Type hints on every function and method. SQLAlchemy models in models/db.py and Pydantic schemas in models/schemas.py kept strictly separate. Async FastAPI endpoints where IO bound. Dependency injection for the database session via a get_session FastAPI dependency. Structured logging via the standard logging module. No commented-out code, no TODOs left behind — either implement it or implement it or remove it.
-Testing
-Write tests alongside implementation in the same turn, not in a separate pass. Use pytest. Test the business logic that matters: parsers (correct normalisation, malformed input handled), rules engine (each rule has at least one positive and one negative case), and one end-to-end API integration test that ingests a sample fixture and verifies findings appear via the API. Do not test framework plumbing, dashboard rendering, trivial getters, or SQLAlchemy model definitions. Aim for tests that read like specifications — clear names, one assertion of behaviour per test where practical. Tests live in tests/ mirroring the app/ structure. Run with uv run pytest.
-Architecture
-Parsers normalise provider-specific exports into a common Resource schema. A rules engine evaluates orphan patterns producing Findings. A command generator emits decommission CLI commands attached to Findings. FastAPI exposes ingest, list, detail, and summary endpoints. A Jinja and HTMX dashboard renders the findings.
-Git workflow
-Commit per architectural step using Conventional Commits format (feat:, fix:, test:, docs:, chore:, refactor:). Subject line under 72 characters, imperative mood, no trailing full stop. Body explains the why, not the what, in 2 to 4 lines. Reference the prompts.md turn number when relevant (e.g. "Ref: prompts.md turn 6"). Group implementation with its tests in the same commit. Split unrelated changes into separate commits. At the end of any turn that produces code changes, automatically propose a commit message before completing the response — do not commit until I approve. Never amend pushed commits, never force push, never rewrite history.
-Workflow rules (already acknowledged in the opening prompt)
-No manual edits by me — you provide all logic and fixes. prompts.md maintained every turn with the prompt I just used. Elapsed time reported at the end of every response.
-Create the file with these sections, then confirm. Do not scaffold the project yet — that's the next prompt.
+approve this commit. You missed adding a .gitignore in the scaffold turn. Add one now at the repo root covering: Python artefacts (pycache/, *.pyc, .pyo, .pytest_cache/, .ruff_cache/, .mypy_cache/), virtual environments (.venv/, venv/), uv artefacts that shouldn't be tracked (note: uv.lock SHOULD be committed), the SQLite database files (.db, *.sqlite, .sqlite3), environment files (.env, .env.), OS noise (.DS_Store, Thumbs.db), IDE configs (.vscode/, .idea/, *.swp), build artefacts (build/, dist/, *.egg-info/), and any local upload directory if we have one.
+Check the current git status — if any of these are already tracked, untrack them with git rm --cached and include that in the commit. Propose the commit message.
+
+**Note:** Also removed uv init boilerplate root main.py (entrypoint is app/main.py). No tracked files were caught by the new .gitignore rules.
+
+---
+
+## Turn 5 — Fix prompts.md ordering
+
+**Prompt:**
+Approve this commit and I notice the entries in prompts.md are not in chronological order — you're inserting prompts between earlier turns rather than appending. Fix this now:
+
+Reorder all existing entries in prompts.md so they appear in the exact chronological order I sent them. Use this numbering: Turn 1 (the Lead Architect opener), Turn 2 (CLAUDE.md), Turn 3 (scaffold), then whatever order subsequent prompts were actually sent in.
+Going forward, every new prompt must be appended to the end of prompts.md under a new heading ## Turn N — <short descriptor> where N is the next sequential number. Never insert in the middle, never re-number existing turns, never re-group.
+Include a short header at the top of prompts.md explaining the file is a chronological audit log of every prompt sent, in order.
+
+Show me the reordered file before committing. Propose the commit message as docs: reorder prompts.md chronologically and lock append-only convention.
