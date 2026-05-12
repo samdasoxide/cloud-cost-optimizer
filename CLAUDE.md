@@ -6,7 +6,7 @@ Cloud Cost Optimizer and Remediation Engine. Ingests AWS and Azure billing expor
 
 ## Stack
 
-- Python 3.14
+- Python 3.12.5 (3.14.0a3 was requested but pydantic-core has no compatible wheel for 3.14 alpha; switched with user approval — see prompts.md turn 3)
 - uv for dependency management
 - FastAPI
 - SQLAlchemy 2.0 with SQLite
@@ -22,7 +22,7 @@ Cloud Cost Optimizer and Remediation Engine. Ingests AWS and Azure billing expor
 - Never write version strings, never edit pyproject.toml manually, never use pip.
 - If a version constraint is genuinely needed, run `uv pip index versions <package>` first to confirm versions that exist on PyPI — never invent version numbers from memory.
 - Run code via `uv run` and tests via `uv run pytest`.
-- pyproject.toml must declare `requires-python = ">=3.14"`.
+- pyproject.toml must declare `requires-python = ">=3.12"`.
 - If `uv add` fails due to a Python 3.14 incompatibility, report it immediately rather than silently downgrading Python or working around it.
 
 ## Code Conventions
