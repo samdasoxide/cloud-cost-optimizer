@@ -6,7 +6,7 @@
 
 # Cloud Cost Optimizer and Remediation Engine
 
-**Samuel Ramds**
+**Samuel Ramdas**
 
 > Ingest AWS and Azure billing exports, detect orphaned resources with a rules engine, and generate ready-to-review decommission commands — served through a REST API and an HTMX dashboard.
 
@@ -156,7 +156,10 @@ az disk delete --name myDisk --resource-group prod-rg --yes
 
 ### What an operator does with it
 
-![Dashboard screenshot showing $229 monthly waste, 12 orphan findings across 50 resources, a doughnut chart by provider, and a filterable findings table sorted by estimated saving.](screenshot-placeholder)
+Dashboard screenshot showing $229 monthly waste, 12 orphan findings across 50 resources, a doughnut chart by provider, and a filterable findings table sorted by estimated saving.
+
+<img width="1512" height="827" alt="Screenshot 2026-05-12 at 22 57 16" src="https://github.com/user-attachments/assets/c1ff67c5-f28b-4718-89f7-9dfbf581c5a4" />
+
 
 - **KPI row:** total waste estimate, orphan count, breakdown by provider and severity — at a glance
 - **Doughnut chart:** waste proportion by cloud provider (Chart.js, CDN-loaded)
