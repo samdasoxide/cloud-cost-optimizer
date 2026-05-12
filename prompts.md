@@ -114,3 +114,25 @@ Generate realistic sample billing export files in sample_data/. Before producing
 Two things in this turn.
 First, fix prompts.md ordering and harden the convention. The append-only rule isn't holding. Reorder prompts.md so every turn appears in strict chronological order matching when I actually sent it. The most recent turn must be the last entry in the file, always. Then update CLAUDE.md by replacing the prompts.md rule in the workflow section with this stricter version: prompts.md is strictly append-only and chronological. Each new turn is appended at the very end of the file, under a heading ## Turn N — <short descriptor> where N is exactly one greater than the previous final turn number. Before writing any new entry, read the current final turn number in prompts.md and increment from there. Never insert between existing turns. Never re-number. Never re-group by topic. Never reorder. If you believe a reorder would improve readability, do not do it — propose it to me first. Chronological order is non-negotiable because prompts.md is the audit log of architectural decisions in the order they were made; reordering destroys its value.
 Second, implement the parsers. Build app/parsers/aws.py and app/parsers/azure.py. Each module exposes a single function parse(file_path: Path) -> list[Resource] returning normalised SQLAlchemy Resource objects. The parsers must: map provider-specific fields to the common Resource schema, preserve the original row in raw_export, aggregate line items per resource (one Resource per unique resource_id, summing monthly_cost), skip malformed rows with a logged warning, use pandas for AWS CSV and stdlib json for Azure. Add tests in tests/test_parsers.py. Run uv run pytest tests/test_parsers.py. Propose two commit messages.
+
+---
+
+## Turn 8 — Surface-decisions rule + CLAUDE.md update
+
+**Prompt:**
+The minimal-column fixture is the right call for that test. The malformed-row test exists to verify the error path, not CUR schema fidelity, and the full-fixture tests already cover the schema side.
+But I want to flag the process, not the outcome. You made a design choice (changing the fixture shape) and told me about it after the fact rather than before. In a vibe coding workflow this drifts the audit log: prompts.md should show me directing decisions, not approving them retroactively.
+Add this to CLAUDE.md under the workflow rules section:
+Surface design decisions before making them. If a prompt's instruction proves brittle, ambiguous, or suboptimal during implementation, pause and surface the trade-off before deviating. Format: "Issue: <what's wrong with the literal instruction>. Options: <2 to 3 alternatives>. Recommendation: <which and why>. Confirm before I proceed?" Apply this to any non-trivial deviation — test shape, fixture structure, schema choice, library choice, API contract. Trivial implementation details (variable names, internal helper structure) don't need approval. When in doubt, ask.
+No code changes in this turn — just the CLAUDE.md update. Propose the commit message for the CLAUDE.md change. Report elapsed time.
+
+---
+
+## Turn 9 — prompts.md position correction + memory update
+
+**Prompt:**
+Continue, but two corrections first.
+The turn you just added to prompts.md is out of chronological order again — it's been inserted mid-document rather than appended at the end. Move it to its correct chronological position as the latest turn.
+Then add this clarification to your persistent memory (alongside the existing append-only rule):
+When a turn instructs you to add a previous prompt's text to prompts.md, that retroactive entry still goes in its correct chronological position based on when the original prompt was actually sent — not at the end. The append-only rule applies to new prompts; missed prompts are inserted at their true chronological position. After any such insertion, verify the full file is still in strict chronological order top to bottom.
+Confirm both fixes, show me the current list of turn headings top to bottom, then carry on.
