@@ -201,3 +201,23 @@ Behaviour: AWS resources produce AWS CLI v2 commands with --region and the resou
 - Comment lines prepended to every command; dry-run note and RDS warning added conditionally by resource type
 - generate_command() signature: (finding: Finding, resource: Resource) -> str; attachment to finding.decommission_command happens at the call site (ingest pipeline)
 - 18 new tests, 45 total — all pass.
+
+---
+
+## Turn 13 — FastAPI endpoints and integration test
+
+**Prompt:**
+Implement the FastAPI app in app/main.py and route modules under app/api/. All endpoints use get_session and Pydantic v2 response models.
+Endpoints: POST /api/ingest (UploadFile + provider form field, runs parser → rules → commands → persists → returns IngestionRun summary); GET /api/findings (list with provider/severity/rule_name filters, limit/offset pagination); GET /api/findings/{id} (full detail with linked Resource); GET /api/summary (aggregate stats: total waste, count by provider/rule/severity, top regions by waste). Include OpenAPI tags, response models, and descriptions. Use async endpoints.
+Add one integration test in tests/test_api.py using FastAPI's TestClient and an in-memory (file-based temp) SQLite database via session override: upload aws_cur_sample.csv, assert ingestion summary, assert findings exist with expected rule names.
+After implementation, runtime sanity check: add GET /health, start uvicorn, curl /health (200), /docs (200), /api/summary (200), stop server. Propose commit message. Report elapsed time.
+
+**Implementation notes:**
+- Converted on_event("startup") → asynccontextmanager lifespan to eliminate FastAPI deprecation warnings
+- greenlet was missing (SQLAlchemy async run_sync requires it); added via uv add greenlet
+- Test fixture uses tmp_path (file-based SQLite) + asyncio.run() for table setup + dependency override for get_session; avoids in-memory DB cross-loop issues
+- Ingest pipeline: add resources → flush (get IDs) → evaluate_all → generate_command per finding → add findings → commit → refresh IngestionRun
+- List findings: base select with conditional joins for provider filter; selectinload(Finding.resource) for eager loading; count from subquery; limit/offset mapped to page/page_size
+- app/api/routes.py holds all four route handlers; app/api/__init__.py includes the router
+- Runtime check: /health → 200 {"status":"ok"}, /docs → 200, /api/summary → 200 {"total_resources":0,...}
+- 13 new tests, 58 total — all pass, no warnings

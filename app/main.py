@@ -1,7 +1,10 @@
 import logging
 import logging.config
+from contextlib import asynccontextmanager
+from typing import AsyncGenerator
 
 from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 
 from app.database import init_db
 
@@ -26,17 +29,25 @@ logging.config.dictConfig(
 
 logger = logging.getLogger(__name__)
 
+
+@asynccontextmanager
+async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
+    await init_db()
+    logger.info("Cloud Cost Optimizer started")
+    yield
+
+
 app = FastAPI(
     title="Cloud Cost Optimizer",
     description="Identifies orphaned cloud resources and generates decommission commands.",
     version="0.1.0",
+    lifespan=lifespan,
 )
 
 
-@app.on_event("startup")
-async def on_startup() -> None:
-    await init_db()
-    logger.info("Cloud Cost Optimizer started")
+@app.get("/health", tags=["health"], summary="Liveness check")
+async def health() -> JSONResponse:
+    return JSONResponse({"status": "ok"})
 
 
 from app.api import router as api_router  # noqa: E402
